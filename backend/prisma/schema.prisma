@@ -1,6 +1,5 @@
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -8,6 +7,98 @@ datasource db {
   provider = "postgresql"
 }
 
+// workspace model
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members WorkspaceMember[]
+  boards  Board[]
+
+  @@map("workspace")
+}
+
+model WorkspaceMember {
+  id String @id @default(uuid())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_member")
+}
+
+model Board {
+  id   String @id @default(uuid())
+  name String
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  columns Column[]
+
+  @@map("board")
+}
+
+model Column {
+  id    String @id @default(uuid())
+  name  String
+  order Int
+
+  board   Board  @relation(fields: [boardId], references: [id])
+  boardId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  card Card[]
+
+  @@map("column")
+}
+
+model Card {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  order       Int
+  dueDate     DateTime?
+
+  column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  columnId String
+
+  createdBy   User   @relation("CreatedCards", fields: [createdById], references: [id])
+  createdById String
+
+  assignedTo   User?   @relation("AssignedCards", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cards")
+}
+
+// better auth automatically generated this models
 model User {
   id            String    @id
   name          String
@@ -18,6 +109,11 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  workspaces    WorkspaceMember[]
+  boards        Board[]
+  assignedCards Card[]            @relation("AssignedCards")
+  createdCards  Card[]            @relation("CreatedCards")
 
   @@unique([email])
   @@map("user")
