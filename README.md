@@ -256,10 +256,10 @@ BETTER_AUTH_SECRET=your-secret-key-here
 bun install
  
 # Generate Prisma client
-npx prisma generate
+bunx prisma generate
  
 # Run migrations
-npx prisma migrate dev
+bunx prisma migrate dev
  
 # Start the development server
 bun run dev
